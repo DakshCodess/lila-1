@@ -1,27 +1,27 @@
-package views.html
-package appeal
+package views.html.appeal
 
 import controllers.routes
-import controllers.appeal.routes.{ Appeal as appealRoutes }
-
-import lila.app.templating.Environment.{ given, * }
-import lila.app.ui.ScalatagsTemplate.{ *, given }
+import controllers.appeal.routes.{Appeal => appealRoutes}
+import lila.app.templating.Environment.given
+import lila.app.ui.ScalatagsTemplate.given
+import lila.app.ui.ScalatagsTemplate.{*, frag, nbsp, short, userIdLink, momentFromNowOnce}
 import lila.appeal.Appeal
-import Appeal.Filter
 import lila.report.Report.Inquiry
 import lila.user.UserMark
+import lila.report.Room.Scores
+import play.twirl.api.Html
 
-object queue:
+object Queue {
 
   def apply(
       appeals: List[Appeal.WithUser],
       inquiries: Map[UserId, Inquiry],
       filter: Option[Filter],
       markedByMe: Set[UserId],
-      scores: lila.report.Room.Scores,
+      scores: Scores,
       streamers: Int,
       nbAppeals: Int
-  )(using PageContext) =
+  )(using PageContext): Html =
     views.html.report.list.layout("appeal", scores, streamers, nbAppeals)(
       table(cls := "slist slist-pad see appeal-queue")(
         thead(
@@ -63,12 +63,15 @@ object queue:
     )
 
   private def filterMarks(current: Option[Filter]) =
-    span(cls := "appeal-filters btn-rack"):
-      Filter.allWithIcon.map: (filter, icon) =>
+    span(cls := "appeal-filters btn-rack")(
+      Filter.allWithIcon.map { case (filter, icon) =>
         a(
-          cls := List("btn-rack__btn" -> true, "active" -> current.has(filter)),
+          cls := List("btn-rack__btn" -> true, "active" -> current.contains(filter)),
           href := appealRoutes.queue(
             current.fold(filter.some)(_.toggle(filter)).fold("reset")(_.key).some
           ),
           dataIcon := icon.left.toOption
         )(icon.toOption)
+      }
+    )
+}
